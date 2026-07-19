@@ -22,6 +22,11 @@ export function Brand({ onParentHoldStart, onParentHoldEnd, onParentOpen, onSoun
           onPointerUp={onParentHoldEnd}
           onPointerCancel={onParentHoldEnd}
           onPointerLeave={onParentHoldEnd}
+          onLostPointerCapture={onParentHoldEnd}
+          onBlur={onParentHoldEnd}
+          onContextMenu={(event) => event.preventDefault()}
+          onDragStart={(event) => event.preventDefault()}
+          draggable={false}
           onClick={(event) => event.detail === 0 && onParentOpen()}
           onKeyDown={(event) => (event.key === 'Enter' || event.key === ' ') && onParentOpen()}
           aria-label={t('parent.open')}

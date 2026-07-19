@@ -8,6 +8,7 @@ import { WelcomeView } from './components/WelcomeView.jsx';
 import { playMagicChime, playResultFanfare, playScanPulse } from './core/audio.js';
 import { detectFace, createFaceDetector, isFaceDetectionSupported } from './core/faceDetection.js';
 import { getEnergyLevel, getScanMessageKey } from './core/energy.js';
+import { isPrimaryHoldPointer } from './core/parentHold.js';
 import { useI18n } from './i18n/I18nProvider.jsx';
 import { recordScanEvent } from './lib/scanEvents.js';
 
@@ -87,7 +88,9 @@ export default function App() {
     if (view === 'scanner' && cameraState === 'idle') openCamera();
   }, [cameraState, openCamera, view]);
 
-  const startParentHold = () => {
+  const startParentHold = (event) => {
+    if (!isPrimaryHoldPointer(event)) return;
+    event?.preventDefault?.();
     window.clearTimeout(holdTimerRef.current);
     holdTimerRef.current = window.setTimeout(() => {
       navigator.vibrate?.(35);
@@ -96,7 +99,10 @@ export default function App() {
     }, 1100);
   };
 
-  const endParentHold = () => window.clearTimeout(holdTimerRef.current);
+  const endParentHold = (event) => {
+    event?.preventDefault?.();
+    window.clearTimeout(holdTimerRef.current);
+  };
 
   const primeMirror = () => {
     setPrimedLevel(selectedLevel);

@@ -89,7 +89,28 @@ button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
 .icon-button:hover { background: rgba(255,255,255,.12); color: #fff; }
 .icon-button--light { color: #4d4763; border-color: #e8e3e9; background: #f5f1f3; }
 .icon-button--glass { color: white; background: rgba(15, 10, 39, .32); backdrop-filter: blur(12px); }
-.parent-moon { overflow: hidden; touch-action: none; }
+.parent-moon,
+.parent-hint {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-drag: none;
+}
+.parent-moon *,
+.parent-hint * {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+}
+.parent-moon { overflow: hidden; }
 .parent-moon:active .parent-moon__progress { animation: holdFill 1.1s linear forwards; }
 .parent-moon__progress { position: absolute; inset: auto 0 0; height: 0; background: rgba(255, 214, 110, .24); }
 @keyframes holdFill { to { height: 100%; } }
