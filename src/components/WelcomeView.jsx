@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowIcon, LockIcon, SparklesIcon } from './Icons.jsx';
+import { LockIcon, SparklesIcon } from './Icons.jsx';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 
 export function WelcomeView({ isPrimed, onStart, onParentHoldStart, onParentHoldEnd, onParentOpen }) {
@@ -27,9 +27,8 @@ export function WelcomeView({ isPrimed, onStart, onParentHoldStart, onParentHold
 
       <section className="welcome__action">
         <button className={`primary-button ${!isPrimed ? 'primary-button--locked' : ''}`} type="button" onClick={onStart} disabled={!isPrimed}>
-          <span className="primary-button__icon">{isPrimed ? <SparklesIcon /> : <LockIcon />}</span>
-          <span>{isPrimed ? t('welcome.wake') : t('welcome.waiting')}</span>
-          {isPrimed && <ArrowIcon className="primary-button__arrow" />}
+          <span className="primary-button__icon">{isPrimed ? <SparklesIcon size={22} /> : <LockIcon size={21} />}</span>
+          <span className="primary-button__label">{isPrimed ? t('welcome.wake') : t('welcome.waiting')}</span>
         </button>
         {!isPrimed && (
           <button

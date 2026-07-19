@@ -5,7 +5,7 @@ import { ParentPanel } from './components/ParentPanel.jsx';
 import { ResultView } from './components/ResultView.jsx';
 import { ScannerView } from './components/ScannerView.jsx';
 import { WelcomeView } from './components/WelcomeView.jsx';
-import { playMagicChime, playResultFanfare, playScanPulse } from './core/audio.js';
+import { playMagicChime, playResultFanfare, playScanPulse, unlockAudio } from './core/audio.js';
 import { detectFace, createFaceDetector, isFaceDetectionSupported } from './core/faceDetection.js';
 import { getEnergyLevel, getScanMessageKey } from './core/energy.js';
 import { isPrimaryHoldPointer } from './core/parentHold.js';
@@ -19,13 +19,15 @@ const previewLevel = import.meta.env.DEV
   : null;
 const validPreviewLevel = ['sleepy', 'steady', 'bright'].includes(previewLevel) ? previewLevel : null;
 const isRevealPreview = previewLevel === 'reveal';
+const isWelcomeReadyPreview = previewLevel === 'ready';
+const isParentPreview = previewLevel === 'parent';
 
 export default function App() {
   const { t } = useI18n();
   const [view, setView] = useState(validPreviewLevel ? 'result' : isRevealPreview ? 'scanner' : 'welcome');
-  const [isParentPanelOpen, setParentPanelOpen] = useState(false);
+  const [isParentPanelOpen, setParentPanelOpen] = useState(isParentPreview);
   const [selectedLevel, setSelectedLevel] = useState('sleepy');
-  const [primedLevel, setPrimedLevel] = useState(validPreviewLevel || (isRevealPreview ? 'sleepy' : null));
+  const [primedLevel, setPrimedLevel] = useState(validPreviewLevel || (isRevealPreview || isWelcomeReadyPreview ? 'sleepy' : null));
   const [soundEnabled, setSoundEnabled] = useState(true);
   const faceCheckSupported = isFaceDetectionSupported();
   const [faceCheckEnabled, setFaceCheckEnabled] = useState(faceCheckSupported);
@@ -91,6 +93,7 @@ export default function App() {
   const startParentHold = (event) => {
     if (!isPrimaryHoldPointer(event)) return;
     event?.preventDefault?.();
+    if (soundEnabled) unlockAudio();
     window.clearTimeout(holdTimerRef.current);
     holdTimerRef.current = window.setTimeout(() => {
       navigator.vibrate?.(35);
@@ -105,6 +108,7 @@ export default function App() {
   };
 
   const primeMirror = () => {
+    if (soundEnabled) unlockAudio();
     setPrimedLevel(selectedLevel);
     setParentPanelOpen(false);
     playMagicChime(soundEnabled);
@@ -112,6 +116,7 @@ export default function App() {
 
   const enterScanner = () => {
     if (!primedLevel) return;
+    if (soundEnabled) unlockAudio();
     setScanState('framing');
     setProgress(0);
     setView('scanner');
@@ -119,6 +124,7 @@ export default function App() {
 
   const beginScan = async () => {
     if (scanState !== 'framing' || cameraState !== 'ready') return;
+    if (soundEnabled) unlockAudio();
     setScanState('scanning');
     setProgress(0);
     const scanRunId = scanRunRef.current + 1;
@@ -185,6 +191,20 @@ export default function App() {
     setView('scanner');
   };
 
+  const toggleSound = () => {
+    const nextSoundEnabled = !soundEnabled;
+    setSoundEnabled(nextSoundEnabled);
+    if (nextSoundEnabled) {
+      unlockAudio();
+      playMagicChime(true);
+    }
+  };
+
+  const replayResult = () => {
+    if (soundEnabled) unlockAudio();
+    playResultFanfare(primedLevel, soundEnabled);
+  };
+
   const showBrand = view === 'welcome';
 
   return (
@@ -194,7 +214,7 @@ export default function App() {
           onParentHoldStart={startParentHold}
           onParentHoldEnd={endParentHold}
           onParentOpen={() => setParentPanelOpen(true)}
-          onSoundToggle={() => setSoundEnabled((enabled) => !enabled)}
+          onSoundToggle={toggleSound}
           soundEnabled={soundEnabled}
         />
       )}
@@ -215,7 +235,7 @@ export default function App() {
       {view === 'result' && (
         <ResultView
           result={getEnergyLevel(primedLevel)}
-          onReplay={() => playResultFanfare(primedLevel, soundEnabled)}
+          onReplay={replayResult}
           onFinish={returnHome}
         />
       )}
@@ -226,7 +246,7 @@ export default function App() {
           selectedLevel={selectedLevel}
           onSelectLevel={setSelectedLevel}
           soundEnabled={soundEnabled}
-          onSoundToggle={() => setSoundEnabled((enabled) => !enabled)}
+          onSoundToggle={toggleSound}
           faceCheckEnabled={faceCheckEnabled}
           faceCheckSupported={faceCheckSupported}
           onFaceCheckToggle={() => faceCheckSupported && setFaceCheckEnabled((enabled) => !enabled)}

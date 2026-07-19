@@ -84,7 +84,7 @@ export function ScannerView({ videoRef, cameraState, scanState, progress, scanMe
           ) : null}
         </section>
 
-        <div className="scanner__privacy"><ShieldIcon size={14} /> {t('scanner.privacy')}</div>
+        {!isRevealing && <div className="scanner__privacy"><ShieldIcon size={14} /> {t('scanner.privacy')}</div>}
       </div>
     </main>
   );
