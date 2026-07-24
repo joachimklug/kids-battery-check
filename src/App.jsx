@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Brand } from './components/Brand.jsx';
-import { NoFaceView } from './components/NoFaceView.jsx';
 import { ParentPanel } from './components/ParentPanel.jsx';
 import { ResultView } from './components/ResultView.jsx';
 import { ScannerView } from './components/ScannerView.jsx';
 import { WelcomeView } from './components/WelcomeView.jsx';
 import { playMagicChime, playResultFanfare, playScanPulse, unlockAudio } from './core/audio.js';
-import { detectFace, createFaceDetector, isFaceDetectionSupported } from './core/faceDetection.js';
 import { getEnergyLevel, getScanMessageKey } from './core/energy.js';
+import { loadLastEnergyLevel, saveLastEnergyLevel } from './core/energyPreference.js';
 import { isPrimaryHoldPointer } from './core/parentHold.js';
 import { useI18n } from './i18n/I18nProvider.jsx';
 import { recordScanEvent } from './lib/scanEvents.js';
@@ -17,20 +16,18 @@ const RESULT_REVEAL_MS = 950;
 const previewLevel = import.meta.env.DEV
   ? new URLSearchParams(window.location.search).get('preview')
   : null;
-const validPreviewLevel = ['sleepy', 'steady', 'bright'].includes(previewLevel) ? previewLevel : null;
+const validPreviewLevel = ['sleepy', 'cozy', 'steady', 'playful', 'bright'].includes(previewLevel) ? previewLevel : null;
 const isRevealPreview = previewLevel === 'reveal';
-const isWelcomeReadyPreview = previewLevel === 'ready';
 const isParentPreview = previewLevel === 'parent';
+const startingEnergyLevel = validPreviewLevel || loadLastEnergyLevel();
 
 export default function App() {
   const { t } = useI18n();
   const [view, setView] = useState(validPreviewLevel ? 'result' : isRevealPreview ? 'scanner' : 'welcome');
   const [isParentPanelOpen, setParentPanelOpen] = useState(isParentPreview);
-  const [selectedLevel, setSelectedLevel] = useState('sleepy');
-  const [primedLevel, setPrimedLevel] = useState(validPreviewLevel || (isRevealPreview || isWelcomeReadyPreview ? 'sleepy' : null));
+  const [selectedLevel, setSelectedLevel] = useState(startingEnergyLevel);
+  const [primedLevel, setPrimedLevel] = useState(startingEnergyLevel);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const faceCheckSupported = isFaceDetectionSupported();
-  const [faceCheckEnabled, setFaceCheckEnabled] = useState(faceCheckSupported);
   const [cameraState, setCameraState] = useState(isRevealPreview ? 'ready' : 'idle');
   const [scanState, setScanState] = useState(isRevealPreview ? 'revealing' : 'framing');
   const [progress, setProgress] = useState(isRevealPreview ? 100 : 0);
@@ -122,7 +119,7 @@ export default function App() {
     setView('scanner');
   };
 
-  const beginScan = async () => {
+  const beginScan = () => {
     if (scanState !== 'framing' || cameraState !== 'ready') return;
     if (soundEnabled) unlockAudio();
     setScanState('scanning');
@@ -130,22 +127,15 @@ export default function App() {
     const scanRunId = scanRunRef.current + 1;
     scanRunRef.current = scanRunId;
     playScanPulse(soundEnabled);
-    const detector = faceCheckEnabled ? createFaceDetector() : null;
-    let faceSeen = !faceCheckEnabled;
     const startedAt = performance.now();
-    let lastDetectionAt = 0;
     let lastPulseAt = 0;
 
-    const tick = async (now) => {
+    const tick = (now) => {
       if (scanRunId !== scanRunRef.current) return;
       const elapsed = now - startedAt;
       const nextProgress = Math.min(100, Math.round((elapsed / SCAN_DURATION_MS) * 100));
       setProgress(nextProgress);
 
-      if (detector && now - lastDetectionAt > 650) {
-        lastDetectionAt = now;
-        faceSeen = faceSeen || await detectFace(detector, videoRef.current);
-      }
       if (now - lastPulseAt > 1450 && nextProgress < 92) {
         lastPulseAt = now;
         playScanPulse(soundEnabled);
@@ -153,13 +143,6 @@ export default function App() {
 
       if (elapsed < SCAN_DURATION_MS) {
         window.requestAnimationFrame(tick);
-        return;
-      }
-
-      if (!faceSeen) {
-        stopCamera();
-        setView('no-face');
-        recordScanEvent({ outcome: 'no_face', faceCheckUsed: true });
         return;
       }
 
@@ -171,7 +154,7 @@ export default function App() {
         if (scanRunId !== scanRunRef.current) return;
         stopCamera();
         setView('result');
-        recordScanEvent({ outcome: primedLevel, faceCheckUsed: faceCheckEnabled });
+        recordScanEvent({ outcome: primedLevel });
       }, RESULT_REVEAL_MS);
     };
     window.requestAnimationFrame(tick);
@@ -179,16 +162,15 @@ export default function App() {
 
   const returnHome = () => {
     stopCamera();
-    setPrimedLevel(null);
     setProgress(0);
     setScanState('framing');
     setView('welcome');
   };
 
-  const retryScan = () => {
-    setProgress(0);
-    setScanState('framing');
-    setView('scanner');
+  const scanAgain = () => {
+    saveLastEnergyLevel(primedLevel);
+    setSelectedLevel(primedLevel);
+    returnHome();
   };
 
   const toggleSound = () => {
@@ -198,11 +180,6 @@ export default function App() {
       unlockAudio();
       playMagicChime(true);
     }
-  };
-
-  const replayResult = () => {
-    if (soundEnabled) unlockAudio();
-    playResultFanfare(primedLevel, soundEnabled);
   };
 
   const showBrand = view === 'welcome';
@@ -219,7 +196,7 @@ export default function App() {
         />
       )}
 
-      {view === 'welcome' && <WelcomeView isPrimed={Boolean(primedLevel)} onStart={enterScanner} onParentHoldStart={startParentHold} onParentHoldEnd={endParentHold} onParentOpen={() => setParentPanelOpen(true)} />}
+      {view === 'welcome' && <WelcomeView onStart={enterScanner} onParentHoldStart={startParentHold} onParentHoldEnd={endParentHold} onParentOpen={() => setParentPanelOpen(true)} />}
       {view === 'scanner' && (
         <ScannerView
           videoRef={videoRef}
@@ -235,11 +212,9 @@ export default function App() {
       {view === 'result' && (
         <ResultView
           result={getEnergyLevel(primedLevel)}
-          onReplay={replayResult}
-          onFinish={returnHome}
+          onScanAgain={scanAgain}
         />
       )}
-      {view === 'no-face' && <NoFaceView onRetry={retryScan} onCancel={returnHome} />}
 
       {isParentPanelOpen && (
         <ParentPanel
@@ -247,9 +222,6 @@ export default function App() {
           onSelectLevel={setSelectedLevel}
           soundEnabled={soundEnabled}
           onSoundToggle={toggleSound}
-          faceCheckEnabled={faceCheckEnabled}
-          faceCheckSupported={faceCheckSupported}
-          onFaceCheckToggle={() => faceCheckSupported && setFaceCheckEnabled((enabled) => !enabled)}
           onClose={() => setParentPanelOpen(false)}
           onPrime={primeMirror}
         />

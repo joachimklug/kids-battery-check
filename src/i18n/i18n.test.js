@@ -17,8 +17,8 @@ test('a saved language overrides the current browser preference', () => {
 });
 
 test('translations interpolate variables and fall back safely to English', () => {
-  assert.equal(translate('de', 'result.energyStars', { count: 2 }), '2 von 3 Energiesternen');
-  assert.equal(translate('fr', 'result.done'), 'Done');
+  assert.equal(translate('de', 'result.energyStars', { count: 2 }), '2 von 5 Energiesternen');
+  assert.equal(translate('fr', 'result.scanAgain'), 'Scan again');
   assert.equal(translate('de', 'missing.key'), 'missing.key');
 });
 

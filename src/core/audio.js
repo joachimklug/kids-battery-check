@@ -75,11 +75,14 @@ export const createAudioEngine = (getAudioContextConstructor = getBrowserAudioCo
 
   const playResultFanfare = (levelId, enabled = true) => {
     if (!enabled) return false;
-    const notes = levelId === 'sleepy'
-      ? [392, 349.23, 293.66]
-      : levelId === 'bright'
-        ? [523.25, 659.25, 783.99, 1046.5]
-        : [440, 523.25, 659.25];
+    const resultNotes = {
+      sleepy: [392, 349.23, 293.66],
+      cozy: [392, 440, 392],
+      steady: [440, 523.25, 659.25],
+      playful: [493.88, 587.33, 659.25, 783.99],
+      bright: [523.25, 659.25, 783.99, 1046.5],
+    };
+    const notes = resultNotes[levelId] ?? resultNotes.steady;
     return withAudioContext((context, now) => {
       notes.forEach((note, index) => playTone(context, note, now + index * 0.18, 0.55, 0.055));
     });

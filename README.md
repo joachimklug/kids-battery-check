@@ -13,11 +13,12 @@ Camera access requires `localhost` or HTTPS. Press and hold either moon on the w
 
 ## Product flow
 
-1. The mirror waits for a grown-up.
-2. A press-and-hold gesture opens the private result picker.
+1. On the first visit, the mirror is ready with the middle 3/5 result.
+2. A grown-up can press and hold the moon to change the private result.
 3. The child wakes the mirror and centers their face.
 4. A six-second camera animation scans their sparkle.
-5. Lumo reveals one of three unmistakable visual stories: sleeping at 1/3 energy, calm reading at 2/3, or joyful dancing at 3/3.
+5. Lumo reveals one of five unmistakable visual stories: sleepy at 1/5, cozy at 2/5, calm at 3/5, playful at 4/5, or joyfully dancing at 5/5 energy.
+6. “Scan again” keeps the last result as the default for the next scan and future visits.
 
 ## Languages
 
@@ -25,13 +26,11 @@ The app currently supports English and German. On the first visit it resolves re
 
 All copy lives in `src/i18n/translations.js`. Add a locale to `SUPPORTED_LOCALES`, provide a matching catalog, and the catalog-parity test will catch missing keys.
 
-When the browser supports the native `FaceDetector` API, the parent can require a face to be found before a result appears. Unsupported browsers fall back gracefully and label the option as unavailable.
-
 ## Privacy and Supabase
 
-All camera processing stays in the browser. Frames, photos, names, and other personal data are never uploaded. Supabase is optional and records only the chosen outcome category, whether face checking was used, and a timestamp.
+The camera preview stays in the browser. Frames, photos, names, and other personal data are never uploaded. Supabase is optional and records only the chosen outcome category and a timestamp.
 
-1. Apply `supabase/migrations/20260719000000_create_scan_events.sql` to a Supabase project.
+1. Apply the files in `supabase/migrations` to a Supabase project in timestamp order.
 2. Copy `.env.example` to `.env.local` and provide the public project URL and anon key.
 3. Leave both values unset to disable analytics completely.
 

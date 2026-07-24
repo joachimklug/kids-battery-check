@@ -1,6 +1,6 @@
-const VALID_OUTCOMES = new Set(['sleepy', 'steady', 'bright', 'no_face']);
+const VALID_OUTCOMES = new Set(['sleepy', 'cozy', 'steady', 'playful', 'bright']);
 
-export const recordScanEvent = async ({ outcome, faceCheckUsed }) => {
+export const recordScanEvent = async ({ outcome }) => {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -15,7 +15,7 @@ export const recordScanEvent = async ({ outcome, faceCheckUsed }) => {
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       },
-      body: JSON.stringify({ outcome, face_check_used: Boolean(faceCheckUsed) }),
+      body: JSON.stringify({ outcome }),
     });
     return response.ok;
   } catch {

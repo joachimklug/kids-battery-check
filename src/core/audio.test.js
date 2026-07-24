@@ -46,7 +46,9 @@ test('audio engine reuses an unlocked context for delayed sounds', () => {
   assert.equal(engine.unlock(), true);
   assert.equal(engine.playMagicChime(), true);
   assert.equal(engine.playScanPulse(), true);
-  assert.equal(engine.playResultFanfare('bright'), true);
+  ['sleepy', 'cozy', 'steady', 'playful', 'bright'].forEach((levelId) => {
+    assert.equal(engine.playResultFanfare(levelId), true);
+  });
   assert.equal(constructorCalls, 1);
   assert.equal(resumeCalls, 1);
 });

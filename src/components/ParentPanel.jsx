@@ -3,7 +3,9 @@ import { CheckIcon, CloseIcon, GlobeIcon, MoonIcon, ShieldIcon, VolumeIcon } fro
 import { ENERGY_LEVELS } from '../core/energy.js';
 import { useI18n } from '../i18n/I18nProvider.jsx';
 
-export function ParentPanel({ selectedLevel, onSelectLevel, soundEnabled, onSoundToggle, faceCheckEnabled, faceCheckSupported, onFaceCheckToggle, onClose, onPrime }) {
+const ENERGY_SEGMENTS = [1, 2, 3, 4, 5];
+
+export function ParentPanel({ selectedLevel, onSelectLevel, soundEnabled, onSoundToggle, onClose, onPrime }) {
   const { locale, setLocale, t } = useI18n();
   return (
     <div className="panel-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
@@ -22,20 +24,28 @@ export function ParentPanel({ selectedLevel, onSelectLevel, soundEnabled, onSoun
 
         <p className="parent-panel__intro">{t('parent.intro')}</p>
 
-        <div className="preset-grid" role="radiogroup" aria-label={t('parent.chooseResult')}>
+        <div className="energy-ladder" role="radiogroup" aria-label={t('parent.chooseResult')}>
           {Object.values(ENERGY_LEVELS).map((level) => (
             <button
-              className={`preset-card preset-card--${level.id} ${selectedLevel === level.id ? 'is-selected' : ''}`}
+              className={`energy-choice energy-choice--${level.id} ${selectedLevel === level.id ? 'is-selected' : ''}`}
               type="button"
               role="radio"
               aria-checked={selectedLevel === level.id}
               key={level.id}
               onClick={() => onSelectLevel(level.id)}
+              style={{ '--energy-color': level.color }}
             >
-              <span className="preset-card__check"><CheckIcon size={13} /></span>
-              <span className="preset-card__art"><img src={level.scene} alt="" /></span>
-              <strong>{t(`energy.${level.id}.label`)}</strong>
-              <small>{t(`energy.${level.id}.parentHint`)}</small>
+              <span className="energy-choice__art"><img src={level.scene} alt="" /></span>
+              <span className="energy-choice__copy">
+                <strong>{t(`energy.${level.id}.label`)}</strong>
+                <small>{t(`energy.${level.id}.parentHint`)}</small>
+              </span>
+              <span className="energy-choice__meter" aria-hidden="true">
+                {ENERGY_SEGMENTS.map((segment) => (
+                  <i className={segment <= level.segments ? 'is-filled' : ''} key={segment}>✦</i>
+                ))}
+              </span>
+              <span className="energy-choice__check"><CheckIcon size={14} /></span>
             </button>
           ))}
         </div>
@@ -45,11 +55,6 @@ export function ParentPanel({ selectedLevel, onSelectLevel, soundEnabled, onSoun
             <span className="setting-row__icon"><VolumeIcon size={19} /></span>
             <span><strong>{t('parent.magicSounds')}</strong><small>{t('parent.magicSoundsHint')}</small></span>
             <span className={`toggle ${soundEnabled ? 'is-on' : ''}`} aria-hidden="true"><i /></span>
-          </button>
-          <button type="button" className="setting-row" onClick={onFaceCheckToggle} aria-pressed={faceCheckEnabled} disabled={!faceCheckSupported}>
-            <span className="setting-row__icon"><ShieldIcon size={19} /></span>
-            <span><strong>{t('parent.faceCheck')}</strong><small>{faceCheckSupported ? t('parent.faceCheckHint') : t('parent.faceCheckUnavailable')}</small></span>
-            <span className={`toggle ${faceCheckEnabled ? 'is-on' : ''}`} aria-hidden="true"><i /></span>
           </button>
           <div className="setting-row setting-row--language">
             <span className="setting-row__icon"><GlobeIcon size={19} /></span>
@@ -63,9 +68,11 @@ export function ParentPanel({ selectedLevel, onSelectLevel, soundEnabled, onSoun
 
         <div className="privacy-note"><ShieldIcon size={16} /><span>{t('parent.privacy')}</span></div>
 
-        <button className="prime-button" type="button" onClick={onPrime}>
-          <SparkleDot /> {t('parent.prime')} <span>→</span>
-        </button>
+        <div className="parent-panel__action">
+          <button className="prime-button" type="button" onClick={onPrime}>
+            <SparkleDot /> {t('parent.prime')} <span>→</span>
+          </button>
+        </div>
       </section>
     </div>
   );
